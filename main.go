@@ -36,6 +36,7 @@ func main() {
 
 	r.POST("/alert", alert.Create)
 	r.GET("/alert", alert.All)
+	r.GET("/alert/:id", alert.Get)
 	r.DELETE("/alert/:id", alert.Delete)
 	r.Run()
 }

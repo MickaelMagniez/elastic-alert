@@ -21,6 +21,18 @@ func (ctrl AlertController) All(c *gin.Context) {
 
 }
 
+func (ctrl AlertController) Get(c *gin.Context) {
+	id := c.Param("id")
+	alert, err := alertModel.Get(id)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"alert": alert})
+	}
+
+}
+
 func (ctrl AlertController) Create(c *gin.Context) {
 	var alert models.Alert
 	if err := c.ShouldBindJSON(&alert); err == nil {

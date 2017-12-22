@@ -9,9 +9,18 @@ import (
 
 type AlertModel struct{}
 
+type AlertEmail struct {
+	Recipient string `json:"recipient"`
+}
+type AlertTarget struct {
+	Emails []AlertEmail `json:"emails"`
+}
+
 type Alert struct {
-	ID   string `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
+	ID      string      `json:"id"`
+	Name    string      `json:"name"`
+	//Query   string      `json:"query"`
+	Targets AlertTarget `json:"targets"`
 }
 
 const ESIndex string = ".elastic-alert"
@@ -59,6 +68,34 @@ func (m AlertModel) Delete(id string) (string, error) {
 	fmt.Printf("Indexed tweet %s to index %s, type %s\n", put1.Id, put1.Index, put1.Type)
 
 	return id, nil
+
+}
+
+func (m AlertModel) Get(id string) (Alert, error) {
+	client := es.GetES()
+
+	res, err := client.Search().
+		Index(ESIndex).
+		Type(ESType).
+		Query(elastic.NewIdsQuery().Ids(id)).
+		Do(*es.GetContext())
+	if err != nil {
+		// Handle error
+		panic(err)
+	}
+
+	fmt.Printf("Got alert %s %s\n", res.Hits.Hits[0].Id, res.Hits.Hits[0])
+
+	var alert Alert
+
+	err = json.Unmarshal(*res.Hits.Hits[0].Source, &alert)
+
+	if err != nil {
+		// Handle error
+		panic(err)
+	}
+
+	return alert, nil
 
 }
 
