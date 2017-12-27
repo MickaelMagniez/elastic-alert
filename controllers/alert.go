@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mickaelmagniez/elastic-alert/models"
 	"net/http"
+	"fmt"
 )
 
 type AlertController struct{}
@@ -37,6 +38,24 @@ func (ctrl AlertController) Create(c *gin.Context) {
 	var alert models.Alert
 	if err := c.ShouldBindJSON(&alert); err == nil {
 		alert, err := alertModel.Create(alert)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		} else {
+			c.JSON(http.StatusOK, gin.H{"alert": alert})
+		}
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
+}
+
+
+func (ctrl AlertController) Update(c *gin.Context) {
+	var alert models.Alert
+	if err := c.ShouldBindJSON(&alert); err == nil {
+		fmt.Println("======")
+		fmt.Println(alert.Query)
+		alert, err := alertModel.Update(alert)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		} else {

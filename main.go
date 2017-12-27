@@ -38,5 +38,6 @@ func main() {
 	r.GET("/alert", alert.All)
 	r.GET("/alert/:id", alert.Get)
 	r.DELETE("/alert/:id", alert.Delete)
+	r.PUT("/alert/:id", alert.Update)
 	r.Run()
 }

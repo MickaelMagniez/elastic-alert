@@ -19,6 +19,8 @@ type AlertTarget struct {
 type Alert struct {
 	ID      string      `json:"id"`
 	Name    string      `json:"name"`
+	Elastics    string      `json:"elastics"`
+	Query    string      `json:"query"`
 	//Query   string      `json:"query"`
 	Targets AlertTarget `json:"targets"`
 }
@@ -32,6 +34,26 @@ func (m AlertModel) Create(alert Alert) (Alert, error) {
 	put1, err := client.Index().
 		Index(ESIndex).
 		Type(ESType).
+		BodyJson(alert).
+		Do(*es.GetContext())
+	if err != nil {
+		// Handle error
+		panic(err)
+	}
+	fmt.Printf("Indexed tweet %s to index %s, type %s\n", put1.Id, put1.Index, put1.Type)
+
+	alert.ID = put1.Id
+
+	return alert, nil
+
+}
+func (m AlertModel) Update(alert Alert) (Alert, error) {
+	client := es.GetES()
+
+	put1, err := client.Index().
+		Index(ESIndex).
+		Type(ESType).
+		Id(alert.ID).
 		BodyJson(alert).
 		Do(*es.GetContext())
 	if err != nil {
