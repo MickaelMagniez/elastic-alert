@@ -5,6 +5,7 @@ import (
 	"github.com/mickaelmagniez/elastic-alert/es"
 	"github.com/olivere/elastic"
 	"encoding/json"
+	"time"
 )
 
 type AlertModel struct{}
@@ -17,12 +18,16 @@ type AlertTarget struct {
 }
 
 type Alert struct {
-	ID      string      `json:"id"`
-	Name    string      `json:"name"`
-	Elastics    string      `json:"elastics"`
-	Query    string      `json:"query"`
+	ID             string `json:"id"`
+	Name           string `json:"name"`
+	Elastics       string `json:"elastics"`
+	Query          string `json:"query"`
+	MatchType      string `json:"match_type"`
+	MatchFrequency int    `json:"match_frequency"`
+	MatchPeriod    string `json:"match_period"`
 	//Query   string      `json:"query"`
 	Targets AlertTarget `json:"targets"`
+	LastSent time.Time `json:"last_sent"`
 }
 
 const ESIndex string = ".elastic-alert"
