@@ -13,16 +13,31 @@ import (
 
 const mapping = `
 {
-	"settings":{
+	"settings": {
 		"number_of_shards": 1,
 		"number_of_replicas": 0
 	},
-	"mappings":{
-		"alert":{
-			"properties":{
-				"name":{
-					"type":"keyword"
+	"mappings": {
+		"alert": {
+			"properties": {
+				"name": {
+					"type": "keyword"
+				},
+				"elastic": {
+					"type": "object",
+					"properties": {
+						"url": {
+							"type": "keyword"
+						},
+						"index": {
+							"type": "keyword"
+						},
+						"type": {
+							"type": "keyword"
+						}
+					}
 				}
+
 			}
 		}
 	}
@@ -63,7 +78,10 @@ func SetupES() {
 		// Handle error
 		panic(err)
 	}
-	if !exists {
+	if exists {
+		client.DeleteIndex(".elastic-alert").Do(ctx)
+	}
+	//if !exists {
 		// Create a new index.
 		createIndex, err := client.CreateIndex(".elastic-alert").BodyString(mapping).Do(ctx)
 		if err != nil {
@@ -73,6 +91,11 @@ func SetupES() {
 		if !createIndex.Acknowledged {
 			// Not acknowledged
 		}
-	}
+	//}
 
+}
+
+
+func main() {
+	SetupES()
 }

@@ -78,3 +78,41 @@ func (ctrl AlertController) Delete(c *gin.Context) {
 	}
 
 }
+
+
+func (ctrl AlertController) GetServers(c *gin.Context) {
+
+	servers, err := alertModel.GetServers()
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"servers": servers})
+	}
+
+}
+
+func (ctrl AlertController) GetIndices(c *gin.Context) {
+
+	servers, err := alertModel.GetIndices( c.Query("url"))
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"indices": servers})
+	}
+
+}
+
+func (ctrl AlertController) GetTypes(c *gin.Context) {
+
+	servers, err := alertModel.GetTypes( c.Query("url"), c.Query("index"))
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"types": servers})
+	}
+
+}
+

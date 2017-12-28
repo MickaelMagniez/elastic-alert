@@ -5,6 +5,7 @@ import (
 
 	"github.com/mickaelmagniez/elastic-alert/controllers"
 	"github.com/mickaelmagniez/elastic-alert/es"
+	"github.com/mickaelmagniez/elastic-alert/config"
 )
 
 func CORSMiddleware() gin.HandlerFunc {
@@ -30,6 +31,7 @@ func main() {
 	r := gin.Default()
 	r.Use(CORSMiddleware())
 
+	config.InitConfiguration()
 	es.Init()
 
 	alert := new(controllers.AlertController)
@@ -39,5 +41,10 @@ func main() {
 	r.GET("/alert/:id", alert.Get)
 	r.DELETE("/alert/:id", alert.Delete)
 	r.PUT("/alert/:id", alert.Update)
+
+
+	r.GET("/elastics", alert.GetServers)
+	r.GET("/elastics/indices", alert.GetIndices)
+	r.GET("/elastics/types", alert.GetTypes)
 	r.Run()
 }

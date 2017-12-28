@@ -1,0 +1,9 @@
+elastic:
+  host: localhost
+  port: 9200
+targets:
+  email:
+    sender: alert@acme.com
+    smtp:
+      host: localhost
+      port: 1025

@@ -16,18 +16,22 @@ type AlertEmail struct {
 type AlertTarget struct {
 	Emails []AlertEmail `json:"emails"`
 }
-
+type Elastic struct {
+	Url   string `json:"url"`
+	Index string `json:"index"`
+	Type  string `json:"type"`
+}
 type Alert struct {
-	ID             string `json:"id"`
-	Name           string `json:"name"`
-	Elastics       string `json:"elastics"`
-	Query          string `json:"query"`
-	MatchType      string `json:"match_type"`
-	MatchFrequency int    `json:"match_frequency"`
-	MatchPeriod    string `json:"match_period"`
+	ID             string  `json:"id"`
+	Name           string  `json:"name"`
+	Elastic        Elastic `json:"elastic"`
+	Query          string  `json:"query"`
+	MatchType      string  `json:"match_type"`
+	MatchFrequency int     `json:"match_frequency"`
+	MatchPeriod    string  `json:"match_period"`
 	//Query   string      `json:"query"`
-	Targets AlertTarget `json:"targets"`
-	LastSent time.Time `json:"last_sent"`
+	Targets  AlertTarget `json:"targets"`
+	LastSent time.Time   `json:"last_sent"`
 }
 
 const ESIndex string = ".elastic-alert"
@@ -142,12 +146,113 @@ func (m AlertModel) All() ([]Alert, error) {
 	alerts := make([]Alert, len(searchResult.Hits.Hits))
 	for i, hit := range searchResult.Hits.Hits {
 		var alert Alert
-		alert.ID = hit.Id
+
+		fmt.Println(hit.Id)
 		err := json.Unmarshal(*hit.Source, &alert)
 		if err != nil {
 			// Deserialization failed
 		}
+		alert.ID = hit.Id
 		alerts[i] = alert
 	}
 	return alerts, nil
+}
+
+func (m AlertModel) GetServers() ([]string, error) {
+	client := es.GetES()
+
+	searchResult, err := client.Search().
+		Index(ESIndex).
+		Type(ESType).
+		Query(elastic.NewMatchAllQuery()).
+		Aggregation("elastics", elastic.NewTermsAggregation().Field("elastic.url")).
+		From(0).Size(0).
+		Do(*es.GetContext())
+
+	fmt.Println("===")
+	fmt.Println(searchResult.TotalHits())
+	if err != nil {
+		// Handle error
+		panic(err)
+	}
+	servers := make([]string, 0, searchResult.TotalHits())
+
+	if agg, found := searchResult.Aggregations.Terms("elastics"); found {
+		elastics := make(map[string]int64)
+		for _, bucket := range agg.Buckets {
+			fmt.Println(bucket.Key.(string))
+			elastics[bucket.Key.(string)] = bucket.DocCount
+			servers = append(servers, bucket.Key.(string))
+		}
+	}
+	fmt.Println(len(servers))
+	return servers, nil
+}
+
+
+func (m AlertModel) GetIndices(url string) ([]string, error) {
+	client := es.GetES()
+
+	searchResult, err := client.Search().
+		Index(ESIndex).
+		Type(ESType).
+		Query(elastic.NewBoolQuery().Must(elastic.NewTermQuery("elastic.url", url))).
+		Aggregation("elastics", elastic.NewTermsAggregation().Field("elastic.index")).
+		From(0).Size(0).
+		Do(*es.GetContext())
+
+	fmt.Println("===")
+	fmt.Println(url)
+	fmt.Println(searchResult.TotalHits())
+	if err != nil {
+		// Handle error
+		panic(err)
+	}
+	servers := make([]string, 0, searchResult.TotalHits())
+
+	if agg, found := searchResult.Aggregations.Terms("elastics"); found {
+		elastics := make(map[string]int64)
+		for _, bucket := range agg.Buckets {
+			fmt.Println(bucket.Key.(string))
+			elastics[bucket.Key.(string)] = bucket.DocCount
+			servers = append(servers, bucket.Key.(string))
+		}
+	}
+	fmt.Println(len(servers))
+	return servers, nil
+}
+
+
+
+func (m AlertModel) GetTypes(url string, index string) ([]string, error) {
+	client := es.GetES()
+
+	searchResult, err := client.Search().
+		Index(ESIndex).
+		Type(ESType).
+			//
+		Query(elastic.NewBoolQuery().Must(elastic.NewTermQuery("elastic.url", url)).Must(elastic.NewTermQuery("elastic.index", index))).
+		Aggregation("elastics", elastic.NewTermsAggregation().Field("elastic.type")).
+		From(0).Size(0).
+		Do(*es.GetContext())
+
+	fmt.Println("===")
+	fmt.Println(index)
+	fmt.Println(searchResult.TotalHits())
+	if err != nil {
+		// Handle error
+		panic(err)
+	}
+	servers := make([]string, 0, searchResult.TotalHits())
+
+	if agg, found := searchResult.Aggregations.Terms("elastics"); found {
+		elastics := make(map[string]int64)
+		for _, bucket := range agg.Buckets {
+			fmt.Println(bucket.Key.(string))
+			elastics[bucket.Key.(string)] = bucket.DocCount
+			servers = append(servers, bucket.Key.(string))
+		}
+	}
+	fmt.Println(len(servers))
+	return servers, nil
 }

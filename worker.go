@@ -3,17 +3,24 @@ package main
 import (
 	"fmt"
 	"github.com/mickaelmagniez/elastic-alert/models"
-	"github.com/mickaelmagniez/elastic-alert/es"
 	"github.com/olivere/elastic"
 	"gopkg.in/gomail.v2"
 	"crypto/tls"
 	"time"
 	"encoding/json"
+	"github.com/mickaelmagniez/elastic-alert/config"
+	"context"
+	"github.com/mickaelmagniez/elastic-alert/es"
 )
 
 var alertModel = new(models.AlertModel)
 
 func main() {
+
+	config.InitConfiguration()
+	configuration := config.GetConfiguration()
+	fmt.Println(configuration.Targets.Email.Smtp.Host)
+
 	es.Init()
 
 	fmt.Println("worker")
@@ -23,10 +30,21 @@ func main() {
 		fmt.Println(err)
 
 	} else {
-		client := es.GetES()
+
 		fmt.Println(len(alerts))
 
 		for _, alert := range alerts {
+
+			ctx := context.Background()
+
+			client, _ := elastic.NewClient(
+				elastic.SetURL(alert.Elastic.Url),
+				elastic.SetSniff(false),
+
+			)
+
+			//client := es.GetES()
+
 			fmt.Println(alert)
 			query := elastic.NewBoolQuery()
 			query = query.Must(
@@ -52,11 +70,11 @@ func main() {
 			//
 			//query["bool"]["must"] = append(query["bool"]["must"], test)
 			res, err := client.Search().
-			//Index(ESIndex).
-			//Type(ESType).
+				Index(alert.Elastic.Index).
+				Type(alert.Elastic.Index).
 			//Query(elastic.RawStringQuery(alert.Query)).
 				Query(query).
-				Do(*es.GetContext())
+				Do(ctx)
 			if err != nil {
 				// Handle error
 				panic(err)
@@ -74,18 +92,21 @@ func main() {
 				fmt.Println("match frequency ok")
 				for _, email := range alert.Targets.Emails {
 					fmt.Printf("email %s\n", email.Recipient)
+					fmt.Printf("sender %s\n", configuration.Targets.Email.Sender)
 
 					m := gomail.NewMessage()
 
-					m.SetHeader("From", "alert@example.com")
+					m.SetHeader("From", configuration.Targets.Email.Sender)
 					m.SetHeader("To", email.Recipient)
+					//m.SetHeader("From", "alex@example.com")
+					//m.SetHeader("To", "bob@example.com", "cora@example.com")
 					m.SetHeader("Subject", fmt.Sprintf("Alert '%s' triggered!", alert.Name))
 					//fmt.Println(string((*(res.Hits.Hits[0].Source))[:]))
 					a, _ := json.MarshalIndent(res.Hits.Hits[0].Source, "", "\t")
 					fmt.Println(string(a[:]))
-					m.SetBody("text/html", fmt.Sprintf("<pre>%s</pre>",string(a[:])))
+					m.SetBody("text/html", fmt.Sprintf("<pre>%s</pre>", string(a[:])))
 
-					d := gomail.NewDialer("127.0.0.1", 1025, "", "")
+					d := gomail.NewDialer(configuration.Targets.Email.Smtp.Host, configuration.Targets.Email.Smtp.Port, configuration.Targets.Email.Smtp.Username, configuration.Targets.Email.Smtp.Password)
 					d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 					// Send the email to Bob, Cora and Dan.
 					if err := d.DialAndSend(m); err != nil {

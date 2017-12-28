@@ -16,7 +16,7 @@ services:
     ports:
       - 9200:9200
   maildev:
-    image: djfarrelly/maildev
+    image: mickaelmagniez/maildev
     ports:
       - 1025:25/tcp
       - 1080:80
