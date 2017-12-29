@@ -1,41 +1,33 @@
-package es
+package datastore
 
 import (
 	"github.com/olivere/elastic"
 	"context"
-	"github.com/mickaelmagniez/elastic-alert/config"
 	"fmt"
+	"github.com/mickaelmagniez/elastic-alert/config"
 )
 
-type ES struct {
+type datastore struct {
 	*elastic.Client
+	ctx *context.Context
 }
-
-var es *elastic.Client
-var ctx *context.Context
+var EsStore *datastore
 
 func Init() {
 	configuration := config.GetConfiguration()
 
-	ctx1 := context.Background()
-	ctx = &ctx1
+	ctx := context.Background()
 
-	es1, err := elastic.NewClient(
+	es, err := elastic.NewClient(
 		elastic.SetURL(fmt.Sprintf("http://%s:%d", configuration.Elastic.Host, configuration.Elastic.Port)),
 		elastic.SetSniff(false),
-
 	)
-	es = es1
 	if err != nil {
 		panic(err)
 	}
-
+	EsStore = &datastore{
+		Client: es,
+		ctx: &ctx,
+	}
 }
 
-func GetES() *elastic.Client {
-	return es
-}
-
-func GetContext() *context.Context {
-	return ctx
-}

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/mickaelmagniez/elastic-alert/models"
 	"github.com/olivere/elastic"
 	"gopkg.in/gomail.v2"
 	"crypto/tls"
@@ -10,21 +9,20 @@ import (
 	"encoding/json"
 	"github.com/mickaelmagniez/elastic-alert/config"
 	"context"
-	"github.com/mickaelmagniez/elastic-alert/es"
+	"github.com/mickaelmagniez/elastic-alert/store/datastore"
+	"github.com/mickaelmagniez/elastic-alert/store"
 )
-
-var alertModel = new(models.AlertModel)
 
 func main() {
 
 	config.InitConfiguration()
-	configuration := config.GetConfiguration()
-	fmt.Println(configuration.Targets.Email.Smtp.Host)
 
-	es.Init()
+	datastore.Init()
+
+	configuration := config.GetConfiguration()
 
 	fmt.Println("worker")
-	alerts, err := alertModel.All()
+	alerts, err := store.AllAlerts()
 	if err != nil {
 		fmt.Println("error")
 		fmt.Println(err)
@@ -88,7 +86,7 @@ func main() {
 			}
 			if int(res.TotalHits()) >= limit {
 				alert.LastSent = time.Now()
-				alertModel.Update(alert)
+				store.UpdateAlert(alert)
 				fmt.Println("match frequency ok")
 				for _, email := range alert.Targets.Emails {
 					fmt.Printf("email %s\n", email.Recipient)

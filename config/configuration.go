@@ -8,6 +8,8 @@ import (
 type ConfigurationElastic struct {
 	Host string `json:"host"`
 	Port int    `json:"port"`
+	Index string    `json:"index"`
+	Type string    `json:"type"`
 }
 
 type ConfigurationTargetsEmailSMTP struct {

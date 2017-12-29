@@ -1,6 +1,8 @@
 elastic:
   host: localhost
   port: 9200
+  index: .elastic-alert
+  type: alert
 targets:
   email:
     sender: alert@acme.com
